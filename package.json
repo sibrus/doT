@@ -8,13 +8,13 @@
     "templating"
   ],
   "version": "1.0.3",
+  "license": "MIT",
   "main": "index",
   "bin": {
     "dottojs": "./bin/dot-packer"
   },
-  "homepage": "http://github.com/olado/doT",
-  "repository": "git://github.com/olado/doT.git",
-  "author": "Laura Doktorova <ldoktorova@gmail.com>",
+  "repository": "git://github.com/sibrus/doT.git",
+  "author": "Laura Doktorova <ldoktorova@gmail.com>, fork and edits by Ivan Matyunin",
   "engines": [
     "node >=0.2.6"
   ],

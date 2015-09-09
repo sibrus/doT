@@ -6,7 +6,7 @@
 	"use strict";
 
 	var doT = {
-		version: "1.0.3",
+		version: "1.0.4",
 		templateSettings: {
 			evaluate:    /\{\{([\s\S]+?(\}?)+)\}\}/g,
 			interpolate: /\{\{=([\s\S]+?)\}\}/g,
@@ -21,7 +21,8 @@
 			strip:		true,
 			append:		true,
 			selfcontained: false,
-			doNotSkipEncoded: false
+			doNotSkipEncoded: false,
+      htmlEncodeFn: undefined
 		},
 		template: undefined, //fn, compile template
 		compile:  undefined  //fn, for express
@@ -35,6 +36,8 @@
 		};
 	};
 
+  var skip = /$^/;
+
 	_globals = (function(){ return this || (0,eval)("this"); }());
 
 	if (typeof module !== "undefined" && module.exports) {
@@ -44,11 +47,6 @@
 	} else {
 		_globals.doT = doT;
 	}
-
-	var startend = {
-		append: { start: "'+(",      end: ")+'",      startencode: "'+encodeHTML(" },
-		split:  { start: "';out+=(", end: ");out+='", startencode: "';out+=encodeHTML(" }
-	}, skip = /$^/;
 
 	function resolveDefs(c, block, def) {
 		return ((typeof block === "string") ? block : block.toString())
@@ -87,7 +85,21 @@
 	}
 
 	doT.template = function(tmpl, c, def) {
-		c = c || doT.templateSettings;
+	  c = c || {};
+    for (var key in doT.templateSettings) {
+        if (doT.templateSettings.hasOwnProperty(key)) {
+            c[key] = (c[key] === undefined) ? doT.templateSettings[key] : c[key];
+        }
+    }
+
+    var encodeFn = (typeof c.htmlEncodeFn === 'undefined') ? 'encodeHTML' : c.htmlEncodeFn;
+
+    var startend = {
+		    append: { start: "'+(",      end: ")+'",      startencode: "'+" + encodeFn + "(" },
+    		split:  { start: "';out+=(", end: ");out+='", startencode: "';out+=" + encodeFn + "(" }
+    };
+
+
 		var cse = c.append ? startend.append : startend.split, needhtmlencode, sid = 0, indv,
 			str  = (c.use || c.define) ? resolveDefs(c, tmpl, def || {}) : tmpl;
 
@@ -120,7 +132,7 @@
 			.replace(/(\s|;|\}|^|\{)out\+='';/g, '$1').replace(/\+''/g, "");
 			//.replace(/(\s|;|\}|^|\{)out\+=''\+/g,'$1out+=');
 
-		if (needhtmlencode) {
+		if (needhtmlencode && typeof c.htmlEncodeFn === 'undefined') {
 			if (!c.selfcontained && _globals && !_globals._encodeHTML) _globals._encodeHTML = doT.encodeHTMLSource(c.doNotSkipEncoded);
 			str = "var encodeHTML = typeof _encodeHTML !== 'undefined' ? _encodeHTML : ("
 				+ doT.encodeHTMLSource.toString() + "(" + (c.doNotSkipEncoded || '') + "));"
